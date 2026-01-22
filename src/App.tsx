@@ -1,25 +1,35 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AuthPage from './pages/AuthPage';
-import HomePage from './pages/HomePage';
+import { AppRoute } from './routes';
 import { isAuthenticated } from './services/authService';
+import './App.css';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/auth" element={<AuthPage />} />
-        <Route
-          path="/"
-          element={
-            isAuthenticated() ? (
-              <HomePage />
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          }
-        />
+        {AppRoute.map((route, index) => {
+          const Page = route.page;
+          const Layout = route.layout || React.Fragment;
+
+          return (
+            <Route
+              key={index}
+              path={route.path}
+              element={
+                route.isProtected && !isAuthenticated() ? (
+                  <Navigate to="/auth" replace />
+                ) : (
+                  <Layout>
+                    <Page />
+                  </Layout>
+                )
+              }
+            />
+          );
+        })}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
