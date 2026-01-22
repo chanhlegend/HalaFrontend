@@ -135,3 +135,18 @@ export const getAccessToken = (): string | null => {
 export const isAuthenticated = (): boolean => {
     return !!getAccessToken();
 };
+
+export const forgotPassword = async (email: string) => {
+    const response = await axios.post(`${API_URL}/forgot-password`, { email });
+    return response.data;
+};
+
+export const verifyForgotPasswordOTP = async (email: string, otp: string) => {
+    const response = await axios.post(`${API_URL}/verify-reset-otp`, { email, otp });
+    return response.data;
+};
+
+export const resetPassword = async (data: any) => {
+    const response = await axios.post(`${API_URL}/reset-password`, data);
+    return response.data;
+};

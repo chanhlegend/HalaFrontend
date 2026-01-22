@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import * as authService from '../services/authService';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
+
 const AuthPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'login' | 'register'>('register');
     const [showOTPModal, setShowOTPModal] = useState(false);
+    const [showForgotModal, setShowForgotModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -304,7 +307,14 @@ const AuthPage: React.FC = () => {
                                             required
                                         />
                                         <div className="mt-2 text-right">
-                                            <a href="#" className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                                            <a
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setShowForgotModal(true);
+                                                }}
+                                                className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                                            >
                                                 Quên mật khẩu?
                                             </a>
                                         </div>
@@ -449,6 +459,12 @@ const AuthPage: React.FC = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Forgot Password Modal */}
+            <ForgotPasswordModal
+                isOpen={showForgotModal}
+                onClose={() => setShowForgotModal(false)}
+            />
         </div>
     );
 };
