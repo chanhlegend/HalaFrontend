@@ -28,7 +28,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <Sidebar user={user} />
             </motion.div>
 
-            <main className="ml-64 w-full p-8 min-h-screen">
+            <main className="ml-64 w-full min-h-screen">
                 {children}
             </main>
         </div>

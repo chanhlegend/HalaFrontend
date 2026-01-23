@@ -10,6 +10,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { logout } from '../services/authService';
+import { useSocket } from '../contexts/SocketContext';
 
 interface SidebarProps {
     user: {
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     const navigate = useNavigate();
+    const { unreadCount } = useSocket();
 
     const handleLogout = async () => {
         await logout();
@@ -63,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                         key={item.path}
                         to={item.path}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${isActive
                                 ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
                                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                             }`
@@ -71,6 +73,11 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                     >
                         <item.icon size={20} />
                         <span className="font-medium">{item.label}</span>
+                        {item.label === 'Thông báo' && unreadCount > 0 && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
                     </NavLink>
                 ))}
             </nav>
