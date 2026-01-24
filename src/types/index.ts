@@ -4,6 +4,11 @@ export interface IUser {
   email: string;
   phone?: string;
   avatar?: string;
+  coverPhoto?: string;
+  bio?: string;
+  dateOfBirth?: string;
+  workplace?: string;
+  location?: string;
   createdAt: string;
   updatedAt: string;
 }
