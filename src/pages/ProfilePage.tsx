@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Edit, Briefcase, MapPin, Calendar, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
 import PostCard from '../components/PostCard';
 import CreatePost from '../components/CreatePost';
 import EditProfileModal from '../components/EditProfileModal';
-import { getProfile, updateProfile } from '../services/userService';
+import { getProfile, updateProfile, uploadAvatar, uploadCoverPhoto } from '../services/userService';
 import { friendService, Friend } from '../services/friendService';
 import { useToast } from '../contexts/ToastContext';
 import { IUser } from '../types';
@@ -59,7 +60,33 @@ const ProfilePage: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const { showToast } = useToast();
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+    const coverInputRef = useRef<HTMLInputElement>(null);
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.15
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                duration: 0.5,
+                ease: "easeOut" as const
+            }
+        }
+    };
 
     // Load user profile
     useEffect(() => {
@@ -108,7 +135,11 @@ const ProfilePage: React.FC = () => {
         try {
             const updatedUser = await updateProfile(data);
             setUser(updatedUser);
+            // Cập nhật localStorage
+            localStorage.setItem('user', JSON.stringify(updatedUser));
             showToast('Cập nhật thông tin thành công!', 'success');
+            // Dispatch event để cập nhật sidebar
+            window.dispatchEvent(new Event('userUpdated'));
         } catch (error: any) {
             throw error;
         }
@@ -122,6 +153,84 @@ const ProfilePage: React.FC = () => {
             month: 'numeric',
             year: 'numeric',
         });
+    };
+
+    const handleAvatarClick = () => {
+        avatarInputRef.current?.click();
+    };
+
+    const handleCoverClick = () => {
+        coverInputRef.current?.click();
+    };
+
+    const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showToast('Vui lòng chọn file ảnh', 'error');
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Kích thước file không được vượt quá 5MB', 'error');
+            return;
+        }
+
+        try {
+            setIsUploadingAvatar(true);
+            const response = await uploadAvatar(file);
+            setUser(response.user);
+            // Cập nhật localStorage
+            localStorage.setItem('user', JSON.stringify(response.user));
+            showToast('Cập nhật avatar thành công!', 'success');
+            // Dispatch event để cập nhật sidebar
+            window.dispatchEvent(new Event('userUpdated'));
+        } catch (error: any) {
+            showToast(error.response?.data?.message || 'Không thể upload avatar', 'error');
+        } finally {
+            setIsUploadingAvatar(false);
+            // Reset input để có thể chọn lại cùng file
+            if (avatarInputRef.current) {
+                avatarInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleCoverChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showToast('Vui lòng chọn file ảnh', 'error');
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Kích thước file không được vượt quá 5MB', 'error');
+            return;
+        }
+
+        try {
+            setIsUploadingCover(true);
+            const response = await uploadCoverPhoto(file);
+            setUser(response.user);
+            // Cập nhật localStorage
+            localStorage.setItem('user', JSON.stringify(response.user));
+            showToast('Cập nhật ảnh bìa thành công!', 'success');
+        } catch (error: any) {
+            showToast(error.response?.data?.message || 'Không thể upload ảnh bìa', 'error');
+        } finally {
+            setIsUploadingCover(false);
+            // Reset input để có thể chọn lại cùng file
+            if (coverInputRef.current) {
+                coverInputRef.current.value = '';
+            }
+        }
     };
 
     if (isLoading) {
@@ -230,9 +339,30 @@ const ProfilePage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0d0d0d]">
+        <motion.div
+            className="min-h-screen bg-[#0d0d0d]"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+            {/* Hidden file inputs */}
+            <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+            />
+            <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverChange}
+                className="hidden"
+            />
+
             {/* Cover Photo Section */}
-            <div className="relative h-[300px] md:h-[350px] w-full">
+            <motion.div className="relative h-[300px] md:h-[350px] w-full" variants={itemVariants}>
                 <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-[#0d0d0d]">
                     {user.coverPhoto ? (
                         <img
@@ -244,14 +374,20 @@ const ProfilePage: React.FC = () => {
                         <div className="w-full h-full bg-gradient-to-r from-purple-900 to-pink-900" />
                     )}
                 </div>
-                <button className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors">
+                <button 
+                    onClick={handleCoverClick}
+                    disabled={isUploadingCover}
+                    className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors disabled:opacity-50"
+                >
                     <Camera size={18} />
-                    <span className="text-sm font-medium">Sửa ảnh bìa</span>
+                    <span className="text-sm font-medium">
+                        {isUploadingCover ? 'Đang tải...' : 'Sửa ảnh bìa'}
+                    </span>
                 </button>
-            </div>
+            </motion.div>
 
             {/* Profile Info Section */}
-            <div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10">
+            <motion.div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10" variants={itemVariants}>
                 {/* Avatar and Basic Info */}
                 <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
                     {/* Avatar */}
@@ -263,7 +399,11 @@ const ProfilePage: React.FC = () => {
                                 <span>{user.name[0].toUpperCase()}</span>
                             )}
                         </div>
-                        <button className="absolute bottom-2 right-2 w-9 h-9 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-white border-2 border-[#0d0d0d] transition-colors">
+                        <button 
+                            onClick={handleAvatarClick}
+                            disabled={isUploadingAvatar}
+                            className="absolute bottom-2 right-2 w-9 h-9 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-white border-2 border-[#0d0d0d] transition-colors disabled:opacity-50"
+                        >
                             <Camera size={16} />
                         </button>
                     </div>
@@ -311,7 +451,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-800 mb-6">
+                <motion.div className="flex border-b border-gray-800 mb-6" variants={itemVariants}>
                     <button
                         onClick={() => setActiveTab('posts')}
                         className={`flex-1 py-3 text-center font-medium transition-colors relative ${
@@ -351,13 +491,13 @@ const ProfilePage: React.FC = () => {
                             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
                         )}
                     </button>
-                </div>
+                </motion.div>
 
                 {/* Tab Content */}
-                <div className="pb-8">
+                <motion.div className="pb-8" variants={itemVariants}>
                     {renderTabContent()}
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
 
             {/* Edit Profile Modal */}
             <EditProfileModal
@@ -373,7 +513,7 @@ const ProfilePage: React.FC = () => {
                     phone: user.phone,
                 }}
             />
-        </div>
+        </motion.div>
     );
 };
 

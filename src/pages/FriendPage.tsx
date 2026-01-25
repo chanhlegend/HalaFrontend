@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { friendService, Friend, FriendRequest, UserSuggestion } from '../services/friendService';
 import { useToast } from '../contexts/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -16,6 +17,28 @@ const FriendPage: React.FC = () => {
     // Modal State
     const [isUnfriendModalOpen, setIsUnfriendModalOpen] = useState(false);
     const [friendToUnfriend, setFriendToUnfriend] = useState<string | null>(null);
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.15
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                duration: 0.5,
+                ease: "easeOut" as const
+            }
+        }
+    };
 
     useEffect(() => {
         fetchAllData();
@@ -127,9 +150,14 @@ const FriendPage: React.FC = () => {
                 type="danger"
             />
 
-            <div className="max-w-4xl mx-auto">
+            <motion.div
+                className="max-w-4xl mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 {/* Tabs */}
-                <div className="flex bg-[#1a1a2e] rounded-full p-1 mb-8">
+                <motion.div className="flex bg-[#1a1a2e] rounded-full p-1 mb-8" variants={itemVariants}>
                     <button
                         onClick={() => setActiveTab('friends')}
                         className={`flex-1 py-3 px-6 rounded-full text-sm font-medium transition-all duration-200 ${activeTab === 'friends' ? 'bg-[#2a2a40] text-white shadow-lg' : 'text-gray-400 hover:text-white'
@@ -151,10 +179,10 @@ const FriendPage: React.FC = () => {
                     >
                         Tìm kiếm
                     </button>
-                </div>
+                </motion.div>
 
                 {/* Content */}
-                <div className="bg-[#151525] rounded-2xl p-6 border border-gray-800/50 min-h-[500px]">
+                <motion.div className="bg-[#151525] rounded-2xl p-6 border border-gray-800/50 min-h-[500px]" variants={itemVariants}>
                     <h2 className="text-xl font-semibold mb-6">
                         {activeTab === 'friends' && 'Danh sách bạn bè'}
                         {activeTab === 'requests' && 'Lời mời kết bạn'}
@@ -315,8 +343,8 @@ const FriendPage: React.FC = () => {
                             )}
                         </div>
                     )}
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         </div>
     );
 };

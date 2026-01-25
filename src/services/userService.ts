@@ -23,11 +23,11 @@ export const updateProfile = async (data: UpdateProfileData): Promise<IUser> => 
 };
 
 // Upload avatar
-export const uploadAvatar = async (file: File): Promise<{ avatar: string }> => {
+export const uploadAvatar = async (file: File): Promise<{ avatar: string; user: IUser }> => {
     const formData = new FormData();
     formData.append('avatar', file);
     
-    const response = await apiClient.post('/api/users/avatar', formData, {
+    const response = await apiClient.post('/api/users/upload-avatar', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -36,11 +36,11 @@ export const uploadAvatar = async (file: File): Promise<{ avatar: string }> => {
 };
 
 // Upload cover photo
-export const uploadCoverPhoto = async (file: File): Promise<{ coverPhoto: string }> => {
+export const uploadCoverPhoto = async (file: File): Promise<{ coverPhoto: string; user: IUser }> => {
     const formData = new FormData();
     formData.append('coverPhoto', file);
     
-    const response = await apiClient.post('/api/users/cover-photo', formData, {
+    const response = await apiClient.post('/api/users/upload-cover', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
