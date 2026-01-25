@@ -15,6 +15,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         if (currentUser) {
             setUser(currentUser);
         }
+
+        // Lắng nghe sự kiện cập nhật user
+        const handleUserUpdate = () => {
+            const updatedUser = getCurrentUser();
+            if (updatedUser) {
+                setUser(updatedUser);
+            }
+        };
+
+        window.addEventListener('userUpdated', handleUserUpdate);
+
+        return () => {
+            window.removeEventListener('userUpdated', handleUserUpdate);
+        };
     }, []);
 
     return (
