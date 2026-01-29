@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../contexts/SocketContext';
-import { notificationService, Notification } from '../services/notificationService';
+import { notificationService, Notification as NotificationType } from '../services/notificationService';
 import { useToast } from '../contexts/ToastContext';
 import { Bell, Check, CheckCheck, Trash2, UserPlus, UserCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -8,7 +8,7 @@ import { vi } from 'date-fns/locale';
 
 const NotificationPage: React.FC = () => {
     const { notifications: realtimeNotifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
-    const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
+    const [allNotifications, setAllNotifications] = useState<NotificationType[]>([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
 
@@ -22,7 +22,7 @@ const NotificationPage: React.FC = () => {
             setAllNotifications(prev => {
                 const newNotifs = realtimeNotifications.filter(
                     rn => !prev.some(n => n._id === rn._id)
-                );
+                ) as NotificationType[];
                 return [...newNotifs, ...prev];
             });
         }

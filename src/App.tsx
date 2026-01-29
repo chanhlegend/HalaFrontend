@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AppRoute } from './routes';
 import { isAuthenticated } from './services/authService';
 import './App.css';
-import './App.css';
 
 import { ToastProvider } from './contexts/ToastContext';
 import { SocketProvider } from './contexts/SocketContext';
+import GlobalCallHandler from './components/GlobalCallHandler';
 
 function App() {
   return (
@@ -37,6 +37,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
+        {/* Global Call Handler for incoming calls */}
+        <GlobalCallHandler />
       </SocketProvider>
     </ToastProvider>
   );
