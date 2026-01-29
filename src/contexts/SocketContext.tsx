@@ -16,14 +16,44 @@ interface Notification {
     createdAt: string;
 }
 
+export interface IncomingCallData {
+    callerId: string;
+    callerName: string;
+    callerAvatar?: string;
+    channelName: string;
+    token: string | null;
+    appId: string;
+    callType: 'video' | 'audio';
+}
+
+export interface CallAcceptedData {
+    oderId: string;
+    userName: string;
+    userAvatar?: string;
+    channelName: string;
+}
+
 interface SocketContextType {
     socket: Socket | null;
     isConnected: boolean;
     notifications: Notification[];
     unreadCount: number;
+    unreadMessageCount: number;
+    incomingCall: IncomingCallData | null;
+    callAccepted: CallAcceptedData | null;
+    callRejected: boolean;
+    callEnded: boolean;
     markAsRead: (notificationId: string) => void;
     markAllAsRead: () => void;
     clearNotifications: () => void;
+    incrementUnreadMessages: () => void;
+    resetUnreadMessages: () => void;
+    setIncomingCall: (call: IncomingCallData | null) => void;
+    setCallEnded: (ended: boolean) => void;
+    setCallAccepted: (data: CallAcceptedData | null) => void;
+    setCallRejected: (rejected: boolean) => void;
+    acceptCall: () => void;
+    rejectCall: () => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -45,55 +75,162 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+    const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+    const [callAccepted, setCallAccepted] = useState<CallAcceptedData | null>(null);
+    const [callRejected, setCallRejected] = useState(false);
+    const [callEnded, setCallEnded] = useState(false);
     const socketRef = useRef<Socket | null>(null);
     const { showToast } = useToast();
 
     useEffect(() => {
-        const token = localStorage.getItem('accessToken');
-        
-        if (!token) {
-            console.log('No token found, skipping socket connection');
-            return;
-        }
-
-        console.log('Connecting to socket with token...');
-
-        // Connect to socket server
-        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
-            auth: {
-                token,
-            },
-        });
-
-        socketRef.current = newSocket;
-        setSocket(newSocket);
-
-        newSocket.on('connect', () => {
-            console.log('✅ Socket connected successfully');
-            setIsConnected(true);
-        });
-
-        newSocket.on('disconnect', () => {
-            console.log('❌ Socket disconnected');
-            setIsConnected(false);
-        });
-
-        newSocket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
-        });
-
-        newSocket.on('notification', (data: { type: string; notification: Notification }) => {
-            console.log('🔔 Received notification:', data);
-            setNotifications(prev => [data.notification, ...prev]);
-            setUnreadCount(prev => prev + 1);
+        const connectSocket = () => {
+            const token = localStorage.getItem('accessToken');
             
-            // Show toast notification
-            showToast(data.notification.message, 'info');
-        });
+            if (!token) {
+                console.log('No token found, skipping socket connection');
+                return null;
+            }
+
+            console.log('Connecting to socket with token...');
+
+            // Connect to socket server
+            const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+                auth: {
+                    token,
+                },
+            });
+
+            socketRef.current = newSocket;
+            setSocket(newSocket);
+
+            newSocket.on('connect', () => {
+                console.log('✅ Socket connected successfully');
+                setIsConnected(true);
+            });
+
+            newSocket.on('disconnect', () => {
+                console.log('❌ Socket disconnected');
+                setIsConnected(false);
+            });
+
+            newSocket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error.message);
+                if (error.message === 'Authentication error') {
+                    // Token might be expired, disconnect and wait for refresh
+                    newSocket.disconnect();
+                }
+            });
+
+            return newSocket;
+        };
+
+
+        // Initial connection
+        const initialSocket = connectSocket();
+
+        // Handle token refresh
+        const handleTokenRefresh = (event: any) => {
+            console.log('Token refreshed, reconnecting socket...');
+            const { accessToken } = event.detail;
+            
+            // Disconnect old socket
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+            
+            // Update token in localStorage (already done in apiClient)
+            // Reconnect with new token
+            const newSocket = connectSocket();
+            
+            if (newSocket) {
+                // Re-attach event listeners
+                newSocket.on('notification', (data: { type: string; notification: Notification }) => {
+                    console.log('🔔 Received notification:', data);
+                    setNotifications(prev => [data.notification, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                    showToast(data.notification.message, 'info');
+                });
+
+                newSocket.on('new_message', (data: { message: any; conversationId: string }) => {
+                    console.log('💬 Received new message:', data);
+                    setUnreadMessageCount(prev => prev + 1);
+                    showToast(`Tin nhắn mới từ ${data.message.sender.name}`, 'info');
+                });
+
+                newSocket.on('incoming_call', (data: IncomingCallData) => {
+                    console.log('📞 Incoming call:', data);
+                    setIncomingCall(data);
+                });
+
+                newSocket.on('call_ended', () => {
+                    console.log('📴 Call ended by other user');
+                    setIncomingCall(null);
+                    setCallEnded(true);
+                    showToast('Cuộc gọi đã kết thúc', 'info');
+                });
+
+                newSocket.on('call_rejected', () => {
+                    console.log('❌ Call rejected');
+                    setCallRejected(true);
+                    showToast('Cuộc gọi bị từ chối', 'error');
+                });
+
+                newSocket.on('call_accepted', (data: CallAcceptedData) => {
+                    console.log('✅ Call accepted:', data);
+                    setCallAccepted(data);
+                });
+            }
+        };
+
+        window.addEventListener('token-refreshed', handleTokenRefresh);
+
+        if (initialSocket) {
+            initialSocket.on('notification', (data: { type: string; notification: Notification }) => {
+                console.log('🔔 Received notification:', data);
+                setNotifications(prev => [data.notification, ...prev]);
+                setUnreadCount(prev => prev + 1);
+                
+                // Show toast notification
+                showToast(data.notification.message, 'info');
+            });
+
+            initialSocket.on('new_message', (data: { message: any; conversationId: string }) => {
+                console.log('💬 Received new message:', data);
+                setUnreadMessageCount(prev => prev + 1);
+                showToast(`Tin nhắn mới từ ${data.message.sender.name}`, 'info');
+            });
+
+            initialSocket.on('incoming_call', (data: IncomingCallData) => {
+                console.log('📞 Incoming call:', data);
+                setIncomingCall(data);
+            });
+
+            initialSocket.on('call_ended', () => {
+                console.log('📴 Call ended by other user');
+                setIncomingCall(null);
+                setCallEnded(true);
+                showToast('Cuộc gọi đã kết thúc', 'info');
+            });
+
+            initialSocket.on('call_rejected', () => {
+                console.log('❌ Call rejected');
+                setCallRejected(true);
+                showToast('Cuộc gọi bị từ chối', 'error');
+            });
+
+            initialSocket.on('call_accepted', (data: CallAcceptedData) => {
+                console.log('✅ Call accepted:', data);
+                setCallAccepted(data);
+            });
+        }
 
         return () => {
             console.log('Cleaning up socket connection');
-            newSocket.close();
+            window.removeEventListener('token-refreshed', handleTokenRefresh);
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
         };
     }, [showToast]);
 
@@ -116,14 +253,44 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setUnreadCount(0);
     };
 
+    const incrementUnreadMessages = () => {
+        setUnreadMessageCount(prev => prev + 1);
+    };
+
+    const resetUnreadMessages = () => {
+        setUnreadMessageCount(0);
+    };
+
+    const acceptCall = () => {
+        // This will be handled by the component that renders IncomingCall
+        setIncomingCall(null);
+    };
+
+    const rejectCall = () => {
+        setIncomingCall(null);
+    };
+
     const value: SocketContextType = {
         socket,
         isConnected,
         notifications,
         unreadCount,
+        unreadMessageCount,
+        incomingCall,
+        callAccepted,
+        callRejected,
+        callEnded,
         markAsRead,
         markAllAsRead,
         clearNotifications,
+        incrementUnreadMessages,
+        resetUnreadMessages,
+        setIncomingCall,
+        setCallAccepted,
+        setCallRejected,
+        setCallEnded,
+        acceptCall,
+        rejectCall,
     };
 
     return (

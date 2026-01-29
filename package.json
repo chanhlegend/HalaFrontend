@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "agora-rtc-sdk-ng": "^4.24.2",
     "axios": "^1.6.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.29.0",

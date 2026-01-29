@@ -21,7 +21,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     const navigate = useNavigate();
-    const { unreadCount } = useSocket();
+    const { unreadCount, unreadMessageCount } = useSocket();
 
     const handleLogout = async () => {
         await logout();
@@ -76,6 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                         {item.label === 'Thông báo' && unreadCount > 0 && (
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                 {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                        {item.label === 'Tin nhắn' && unreadMessageCount > 0 && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
                             </span>
                         )}
                     </NavLink>
