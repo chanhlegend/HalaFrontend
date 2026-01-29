@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import FriendPage from '../pages/FriendPage';
 import NotificationPage from '../pages/NotificationPage';
 import ProfilePage from '../pages/ProfilePage';
+import UserProfilePage from '../pages/UserProfilePage';
 import MessagePage from '../pages/MessagePage';
 
 
@@ -11,6 +12,7 @@ export const ROUTE_PATH = {
     HOME: '/',
     AUTH: '/auth',
     PROFILE: '/profile',
+    USER_PROFILE: '/user/:userId',
     FRIENDS: '/friends',
     NOTIFICATIONS: '/notifications',
     MESSAGES: '/messages',
@@ -32,6 +34,12 @@ export const AppRoute = [
     {
         path: ROUTE_PATH.PROFILE,
         page: ProfilePage,
+        layout: MainLayout,
+        isProtected: true,
+    },
+    {
+        path: ROUTE_PATH.USER_PROFILE,
+        page: UserProfilePage,
         layout: MainLayout,
         isProtected: true,
     },

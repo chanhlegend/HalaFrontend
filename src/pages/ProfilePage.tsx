@@ -6,6 +6,7 @@ import CreatePost from '../components/CreatePost';
 import EditProfileModal from '../components/EditProfileModal';
 import { getProfile, updateProfile, uploadAvatar, uploadCoverPhoto } from '../services/userService';
 import { friendService, Friend } from '../services/friendService';
+import { getPostsByUser, IPost } from '../services/postService';
 import { useToast } from '../contexts/ToastContext';
 import { IUser } from '../types';
 
@@ -24,25 +25,7 @@ const mockUser = {
     dateOfBirth: '1995-05-15',
 };
 
-const mockPosts = [
-    {
-        id: '1',
-        user: { name: 'Nguyễn Văn Minh', avatar: '' },
-        time: '3 giờ trước',
-        content: 'Đã hoàn thành dự án mới! Cảm giác tuyệt vời 🎉',
-        likes: 45,
-        comments: 0,
-    },
-    {
-        id: '2',
-        user: { name: 'Nguyễn Văn Minh', avatar: '' },
-        time: '1 ngày trước',
-        content: 'Chuyến du lịch Đà Lạt thật tuyệt vời! 🌲⛰️',
-        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
-        likes: 120,
-        comments: 15,
-    },
-];
+
 
 const mockFriends = [
     { id: '1', name: 'Trần Thị Hoa', avatar: '', mutualFriends: 5 },
@@ -57,9 +40,11 @@ const ProfilePage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('posts');
     const [user, setUser] = useState<IUser | null>(null);
     const [friends, setFriends] = useState<Friend[]>([]);
+    const [posts, setPosts] = useState<IPost[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isFriendsLoading, setIsFriendsLoading] = useState(false);
+    const [isPostsLoading, setIsPostsLoading] = useState(false);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [isUploadingCover, setIsUploadingCover] = useState(false);
     const { showToast } = useToast();
@@ -93,6 +78,13 @@ const ProfilePage: React.FC = () => {
         loadProfile();
         loadFriends();
     }, []);
+
+    // Load posts when user is loaded
+    useEffect(() => {
+        if (user?._id) {
+            loadPosts();
+        }
+    }, [user?._id]);
 
     const loadProfile = async () => {
         try {
@@ -129,6 +121,23 @@ const ProfilePage: React.FC = () => {
         } finally {
             setIsFriendsLoading(false);
         }
+    };
+
+    const loadPosts = async () => {
+        if (!user?._id) return;
+        try {
+            setIsPostsLoading(true);
+            const response = await getPostsByUser(user._id);
+            setPosts(response.posts);
+        } catch (error: any) {
+            console.error('Error loading posts:', error);
+        } finally {
+            setIsPostsLoading(false);
+        }
+    };
+
+    const handlePostCreated = () => {
+        loadPosts();
     };
 
     const handleUpdateProfile = async (data: any) => {
@@ -254,18 +263,27 @@ const ProfilePage: React.FC = () => {
             case 'posts':
                 return (
                     <div className="space-y-6">
-                        <CreatePost user={user} />
-                        {mockPosts.map((post) => (
-                            <PostCard
-                                key={post.id}
-                                user={post.user}
-                                time={post.time}
-                                content={post.content}
-                                image={post.image}
-                                likes={post.likes}
-                                comments={post.comments}
-                            />
-                        ))}
+                        <CreatePost user={user} onPostCreated={handlePostCreated} />
+                        {isPostsLoading ? (
+                            <div className="text-center py-8 text-gray-400">Đang tải bài viết...</div>
+                        ) : posts.length === 0 ? (
+                            <div className="text-center py-8 text-gray-400">Chưa có bài viết nào</div>
+                        ) : (
+                            posts.map((post) => (
+                                <PostCard
+                                    key={post._id}
+                                    postId={post._id}
+                                    user={post.author}
+                                    time={post.createdAt}
+                                    content={post.content}
+                                    images={post.images}
+                                    likes={post.likesCount}
+                                    comments={post.commentsCount}
+                                    isLiked={user ? post.likes.includes(user._id) : false}
+                                    currentUserId={user?._id}
+                                />
+                            ))
+                        )}
                     </div>
                 );
             case 'about':

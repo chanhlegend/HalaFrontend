@@ -70,5 +70,15 @@ export const friendService = {
     searchUser: async (email: string) => {
         const response = await apiClient.post('/api/friends/search', { email });
         return response.data;
+    },
+
+    getFriendshipStatus: async (targetUserId: string): Promise<{ status: string; requestId?: string }> => {
+        const response = await apiClient.get(`/api/friends/status/${targetUserId}`);
+        return response.data;
+    },
+
+    cancelFriendRequest: async (requestId: string) => {
+        const response = await apiClient.delete(`/api/friends/request/${requestId}`);
+        return response.data;
     }
 };

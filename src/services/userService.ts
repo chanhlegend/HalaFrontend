@@ -47,3 +47,9 @@ export const uploadCoverPhoto = async (file: File): Promise<{ coverPhoto: string
     });
     return response.data;
 };
+
+// Get user by ID (for viewing other users' profiles)
+export const getUserById = async (userId: string): Promise<IUser> => {
+    const response = await apiClient.get(`/api/users/${userId}`);
+    return response.data;
+};

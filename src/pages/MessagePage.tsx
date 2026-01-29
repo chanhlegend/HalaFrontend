@@ -88,6 +88,14 @@ const MessagePage: React.FC = () => {
                 const data = await getMessages(selectedConversation._id);
                 setMessages(data);
                 await markAsRead(selectedConversation._id);
+                
+                // Reset unread count for this conversation locally
+                setConversations(prev => prev.map(conv => {
+                    if (conv._id === selectedConversation._id) {
+                        return { ...conv, unreadCount: 0 };
+                    }
+                    return conv;
+                }));
             } catch (error) {
                 console.error('Error loading messages:', error);
             }
@@ -117,10 +125,13 @@ const MessagePage: React.FC = () => {
             setConversations(prev => {
                 const updated = prev.map(conv => {
                     if (conv._id === conversationId) {
+                        // If not in current conversation, increment unread count
+                        const isCurrentConversation = selectedConversation?._id === conversationId;
                         return {
                             ...conv,
                             lastMessage: message.content,
                             lastMessageTime: message.createdAt,
+                            unreadCount: isCurrentConversation ? 0 : (conv.unreadCount || 0) + 1,
                         };
                     }
                     return conv;
@@ -236,35 +247,52 @@ const MessagePage: React.FC = () => {
                             <p className="text-sm text-center mt-2">Bắt đầu nhắn tin với bạn bè của bạn!</p>
                         </div>
                     ) : (
-                        filteredConversations.map(conv => (
-                            <div
-                                key={conv._id}
-                                onClick={() => setSelectedConversation(conv)}
-                                className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-800 transition-colors ${selectedConversation?._id === conv._id ? 'bg-gray-800' : ''
-                                    }`}
-                            >
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden flex-shrink-0">
-                                    {conv.participant?.avatar ? (
-                                        <img src={conv.participant.avatar} alt={conv.participant.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span>{conv.participant?.name?.[0]?.toUpperCase() || '?'}</span>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="font-medium text-white truncate">{conv.participant?.name}</h3>
-                                        {conv.lastMessageTime && (
-                                            <span className="text-xs text-gray-400 flex-shrink-0">
-                                                {formatTime(conv.lastMessageTime)}
-                                            </span>
+                        filteredConversations.map(conv => {
+                            const hasUnread = (conv.unreadCount ?? 0) > 0;
+                            return (
+                                <div
+                                    key={conv._id}
+                                    onClick={() => setSelectedConversation(conv)}
+                                    className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-800 transition-colors ${selectedConversation?._id === conv._id ? 'bg-gray-800' : ''} ${hasUnread ? 'bg-purple-500/5' : ''}`}
+                                >
+                                    {/* Avatar with online indicator potential */}
+                                    <div className="relative flex-shrink-0">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                                            {conv.participant?.avatar ? (
+                                                <img src={conv.participant.avatar} alt={conv.participant.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span>{conv.participant?.name?.[0]?.toUpperCase() || '?'}</span>
+                                            )}
+                                        </div>
+                                        {/* Unread indicator dot */}
+                                        {hasUnread && (
+                                            <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
+                                                <span className="text-[10px] text-white font-bold">
+                                                    {conv.unreadCount! > 9 ? '9+' : conv.unreadCount}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
-                                    {conv.lastMessage && (
-                                        <p className="text-sm text-gray-400 truncate">{conv.lastMessage}</p>
-                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className={`font-medium truncate ${hasUnread ? 'text-white font-semibold' : 'text-white'}`}>
+                                                {conv.participant?.name}
+                                            </h3>
+                                            {conv.lastMessageTime && (
+                                                <span className={`text-xs flex-shrink-0 ${hasUnread ? 'text-purple-400 font-medium' : 'text-gray-400'}`}>
+                                                    {formatTime(conv.lastMessageTime)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {conv.lastMessage && (
+                                            <p className={`text-sm truncate ${hasUnread ? 'text-gray-200 font-medium' : 'text-gray-400'}`}>
+                                                {conv.lastMessage}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>
