@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useToast } from './ToastContext';
+import { notificationService } from '../services/notificationService';
+import { getUnreadCount as getUnreadMessageCount } from '../services/messageService';
+import { friendService } from '../services/friendService';
 
 interface Notification {
     _id: string;
@@ -39,6 +42,7 @@ interface SocketContextType {
     notifications: Notification[];
     unreadCount: number;
     unreadMessageCount: number;
+    pendingFriendRequestCount: number;
     incomingCall: IncomingCallData | null;
     callAccepted: CallAcceptedData | null;
     callRejected: boolean;
@@ -48,6 +52,7 @@ interface SocketContextType {
     clearNotifications: () => void;
     incrementUnreadMessages: () => void;
     resetUnreadMessages: () => void;
+    refreshPendingFriendRequests: () => void;
     setIncomingCall: (call: IncomingCallData | null) => void;
     setCallEnded: (ended: boolean) => void;
     setCallAccepted: (data: CallAcceptedData | null) => void;
@@ -76,12 +81,39 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+    const [pendingFriendRequestCount, setPendingFriendRequestCount] = useState(0);
     const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
     const [callAccepted, setCallAccepted] = useState<CallAcceptedData | null>(null);
     const [callRejected, setCallRejected] = useState(false);
     const [callEnded, setCallEnded] = useState(false);
     const socketRef = useRef<Socket | null>(null);
     const { showToast } = useToast();
+
+    // Fetch initial unread counts on mount
+    useEffect(() => {
+        const fetchUnreadCounts = async () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) return;
+
+            try {
+                // Fetch notification unread count
+                const notifData = await notificationService.getUnreadCount();
+                setUnreadCount(notifData.unreadCount);
+
+                // Fetch message unread count
+                const msgCount = await getUnreadMessageCount();
+                setUnreadMessageCount(msgCount);
+
+                // Fetch pending friend requests count
+                const friendRequests = await friendService.getFriendRequests();
+                setPendingFriendRequestCount(friendRequests.length);
+            } catch (error) {
+                console.error('Error fetching unread counts:', error);
+            }
+        };
+
+        fetchUnreadCounts();
+    }, []);
 
     useEffect(() => {
         const connectSocket = () => {
@@ -125,7 +157,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             return newSocket;
         };
 
-
         // Initial connection
         const initialSocket = connectSocket();
 
@@ -149,6 +180,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                     console.log('🔔 Received notification:', data);
                     setNotifications(prev => [data.notification, ...prev]);
                     setUnreadCount(prev => prev + 1);
+                    
+                    // Increment pending friend requests if it's a friend request
+                    if (data.type === 'friend_request') {
+                        setPendingFriendRequestCount(prev => prev + 1);
+                    }
+                    
                     showToast(data.notification.message, 'info');
                 });
 
@@ -190,6 +227,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 console.log('🔔 Received notification:', data);
                 setNotifications(prev => [data.notification, ...prev]);
                 setUnreadCount(prev => prev + 1);
+                
+                // Increment pending friend requests if it's a friend request
+                if (data.type === 'friend_request') {
+                    setPendingFriendRequestCount(prev => prev + 1);
+                }
                 
                 // Show toast notification
                 showToast(data.notification.message, 'info');
@@ -261,6 +303,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setUnreadMessageCount(0);
     };
 
+    const refreshPendingFriendRequests = async () => {
+        try {
+            const friendRequests = await friendService.getFriendRequests();
+            setPendingFriendRequestCount(friendRequests.length);
+        } catch (error) {
+            console.error('Error refreshing pending friend requests:', error);
+        }
+    };
+
     const acceptCall = () => {
         // This will be handled by the component that renders IncomingCall
         setIncomingCall(null);
@@ -276,6 +327,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         notifications,
         unreadCount,
         unreadMessageCount,
+        pendingFriendRequestCount,
         incomingCall,
         callAccepted,
         callRejected,
@@ -285,6 +337,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         clearNotifications,
         incrementUnreadMessages,
         resetUnreadMessages,
+        refreshPendingFriendRequests,
         setIncomingCall,
         setCallAccepted,
         setCallRejected,

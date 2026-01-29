@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { friendService, Friend, FriendRequest, UserSuggestion } from '../services/friendService';
 import { useToast } from '../contexts/ToastContext';
+import { useSocket } from '../contexts/SocketContext';
 import ConfirmModal from '../components/ConfirmModal';
 
 const FriendPage: React.FC = () => {
     const { showToast } = useToast();
+    const { refreshPendingFriendRequests } = useSocket();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'search'>('friends');
     const [friends, setFriends] = useState<Friend[]>([]);
     const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -86,6 +90,7 @@ const FriendPage: React.FC = () => {
         try {
             await friendService.acceptFriendRequest(requestId);
             setRequests(requests.filter(req => req._id !== requestId));
+            refreshPendingFriendRequests();
             showToast("Đã chấp nhận lời mời kết bạn", "success");
         } catch (error) {
             console.error("Error accepting request:", error);
@@ -97,6 +102,7 @@ const FriendPage: React.FC = () => {
         try {
             await friendService.rejectFriendRequest(requestId);
             setRequests(requests.filter(req => req._id !== requestId));
+            refreshPendingFriendRequests();
             showToast("Đã từ chối lời mời", "info");
         } catch (error) {
             console.error("Error rejecting request:", error);
@@ -196,7 +202,10 @@ const FriendPage: React.FC = () => {
                             {/* Friends Tab */}
                             {activeTab === 'friends' && friends.map((item) => (
                                 <div key={item._id} className="flex items-center justify-between p-4 bg-[#1e1e2d] rounded-xl border border-gray-800 hover:border-gray-700 transition-all">
-                                    <div className="flex items-center gap-4">
+                                    <div 
+                                        className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => navigate(`/user/${item.friend._id}`)}
+                                    >
                                         <div className="w-12 h-12 rounded-full bg-gray-600 overflow-hidden">
                                             {item.friend.avatar ? (
                                                 <img src={item.friend.avatar} alt={item.friend.name} className="w-full h-full object-cover" />
@@ -207,7 +216,7 @@ const FriendPage: React.FC = () => {
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-white">{item.friend.name}</h3>
+                                            <h3 className="font-semibold text-white hover:text-purple-400 transition-colors">{item.friend.name}</h3>
                                             <p className="text-sm text-green-400 flex items-center gap-1">
                                                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
                                                 Đang hoạt động
@@ -227,7 +236,10 @@ const FriendPage: React.FC = () => {
                             {/* Requests Tab */}
                             {activeTab === 'requests' && requests.map((req) => (
                                 <div key={req._id} className="flex items-center justify-between p-4 bg-[#1e1e2d] rounded-xl border border-gray-800 hover:border-gray-700 transition-all">
-                                    <div className="flex items-center gap-4">
+                                    <div 
+                                        className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => navigate(`/user/${req.sender._id}`)}
+                                    >
                                         <div className="w-12 h-12 rounded-full bg-gray-600 overflow-hidden">
                                             {req.sender.avatar ? (
                                                 <img src={req.sender.avatar} alt={req.sender.name} className="w-full h-full object-cover" />
@@ -238,7 +250,7 @@ const FriendPage: React.FC = () => {
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-white">{req.sender.name}</h3>
+                                            <h3 className="font-semibold text-white hover:text-purple-400 transition-colors">{req.sender.name}</h3>
                                             <p className="text-sm text-gray-400">12 bạn chung</p>
                                         </div>
                                     </div>
@@ -288,7 +300,10 @@ const FriendPage: React.FC = () => {
 
                                     {searchResult && (
                                         <div className="flex items-center justify-between p-4 bg-[#1e1e2d] rounded-xl border border-gray-800">
-                                            <div className="flex items-center gap-4">
+                                            <div 
+                                                className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                                                onClick={() => navigate(`/user/${searchResult.user._id}`)}
+                                            >
                                                 <div className="w-14 h-14 rounded-full bg-gray-600 overflow-hidden">
                                                     {searchResult.user.avatar ? (
                                                         <img src={searchResult.user.avatar} alt={searchResult.user.name} className="w-full h-full object-cover" />
@@ -299,7 +314,7 @@ const FriendPage: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold text-lg text-white">{searchResult.user.name}</h3>
+                                                    <h3 className="font-semibold text-lg text-white hover:text-purple-400 transition-colors">{searchResult.user.name}</h3>
                                                     <p className="text-gray-400">{searchResult.user.email}</p>
                                                 </div>
                                             </div>

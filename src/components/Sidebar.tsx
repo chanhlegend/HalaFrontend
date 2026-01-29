@@ -6,7 +6,6 @@ import {
     Users,
     MessageCircle,
     Bell,
-    Settings,
     LogOut
 } from 'lucide-react';
 import { logout } from '../services/authService';
@@ -21,7 +20,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     const navigate = useNavigate();
-    const { unreadCount, unreadMessageCount } = useSocket();
+    const { unreadCount, unreadMessageCount, pendingFriendRequestCount } = useSocket();
 
     const handleLogout = async () => {
         await logout();
@@ -34,7 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         { icon: Users, label: 'Bạn bè', path: '/friends' },
         { icon: MessageCircle, label: 'Tin nhắn', path: '/messages' },
         { icon: Bell, label: 'Thông báo', path: '/notifications' },
-        { icon: Settings, label: 'Cài đặt', path: '/settings' },
     ];
 
     return (
@@ -81,6 +79,11 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                         {item.label === 'Tin nhắn' && unreadMessageCount > 0 && (
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                 {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                            </span>
+                        )}
+                        {item.label === 'Bạn bè' && pendingFriendRequestCount > 0 && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {pendingFriendRequestCount > 9 ? '9+' : pendingFriendRequestCount}
                             </span>
                         )}
                     </NavLink>

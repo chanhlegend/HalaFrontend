@@ -13,6 +13,7 @@ export interface Conversation {
     lastMessage?: string;
     lastMessageTime?: string;
     updatedAt: string;
+    unreadCount?: number;
 }
 
 export interface Message {
