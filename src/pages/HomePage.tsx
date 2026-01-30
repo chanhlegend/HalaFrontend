@@ -86,7 +86,7 @@ const HomePage: React.FC = () => {
 
     return (
         <motion.div
-            className="max-w-2xl mx-auto pt-4 p-8"
+            className="max-w-2xl mx-auto pt-4 px-3 sm:px-6 md:px-8 pb-4"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

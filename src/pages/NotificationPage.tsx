@@ -97,20 +97,20 @@ const NotificationPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#0f0f1a] text-white p-8">
+        <div className="min-h-screen bg-[#0f0f1a] text-white p-4 sm:p-6 md:p-8">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold">Thông báo</h1>
-                        <p className="text-gray-400 mt-1">
+                        <h1 className="text-2xl sm:text-3xl font-bold">Thông báo</h1>
+                        <p className="text-gray-400 mt-1 text-sm sm:text-base">
                             {unreadCount > 0 ? `Bạn có ${unreadCount} thông báo chưa đọc` : 'Không có thông báo mới'}
                         </p>
                     </div>
                     {unreadCount > 0 && (
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm font-medium"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto"
                         >
                             <CheckCheck size={18} />
                             Đánh dấu tất cả đã đọc
