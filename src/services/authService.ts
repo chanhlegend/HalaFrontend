@@ -71,6 +71,26 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
 };
 
 /**
+ * Login with Google
+ */
+export const googleLogin = async (credential: string): Promise<AuthResponse> => {
+    const response = await axios.post(`${API_URL}/google`, { credential });
+
+    // Store tokens in localStorage
+    if (response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+    }
+    if (response.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+    }
+    if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+
+    return response.data;
+};
+
+/**
  * Logout user
  */
 export const logout = async (): Promise<void> => {
