@@ -138,21 +138,21 @@ const PostCard: React.FC<PostProps> = ({ postId, user, time, content, images, li
                     <button 
                         onClick={handleLike}
                         disabled={isLiking}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-800 rounded-lg transition-colors ${liked ? 'text-red-500' : 'text-gray-400 hover:text-purple-400'}`}
+                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 hover:bg-gray-800 rounded-lg transition-colors ${liked ? 'text-red-500' : 'text-gray-400 hover:text-purple-400'}`}
                     >
                         <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
-                        <span className="font-medium">Thích</span>
+                        <span className="font-medium text-sm sm:text-base">Thích</span>
                     </button>
                     <button 
                         onClick={() => setShowComments(!showComments)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-800 rounded-lg transition-colors ${showComments ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
+                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 hover:bg-gray-800 rounded-lg transition-colors ${showComments ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
                     >
                         <MessageCircle size={20} />
-                        <span className="font-medium">Bình luận</span>
+                        <span className="font-medium text-sm sm:text-base hidden xs:inline">Bình luận</span>
                     </button>
-                    <button className="flex-1 flex items-center justify-center gap-2 py-2 text-gray-400 hover:text-green-400 hover:bg-gray-800 rounded-lg transition-colors">
+                    <button className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 text-gray-400 hover:text-green-400 hover:bg-gray-800 rounded-lg transition-colors">
                         <Share2 size={20} />
-                        <span className="font-medium">Chia sẻ</span>
+                        <span className="font-medium text-sm sm:text-base hidden xs:inline">Chia sẻ</span>
                     </button>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Edit, Briefcase, MapPin, Calendar, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Camera, Edit, Briefcase, MapPin, Calendar, Mail, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PostCard from '../components/PostCard';
 import CreatePost from '../components/CreatePost';
@@ -8,6 +9,7 @@ import { getProfile, updateProfile, uploadAvatar, uploadCoverPhoto } from '../se
 import { friendService, Friend } from '../services/friendService';
 import { getPostsByUser, IPost } from '../services/postService';
 import { useToast } from '../contexts/ToastContext';
+import { logout } from '../services/authService';
 import { IUser } from '../types';
 
 type TabType = 'posts' | 'about' | 'friends';
@@ -37,6 +39,7 @@ const mockFriends = [
 ];
 
 const ProfilePage: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabType>('posts');
     const [user, setUser] = useState<IUser | null>(null);
     const [friends, setFriends] = useState<Friend[]>([]);
@@ -48,6 +51,11 @@ const ProfilePage: React.FC = () => {
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [isUploadingCover, setIsUploadingCover] = useState(false);
     const { showToast } = useToast();
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/auth');
+    };
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -328,13 +336,13 @@ const ProfilePage: React.FC = () => {
                         ) : friends.length === 0 ? (
                             <div className="text-center py-8 text-gray-400">Chưa có bạn bè nào</div>
                         ) : (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 {friends.map((friendItem) => (
                                     <div
                                         key={friendItem._id}
-                                        className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer"
+                                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer"
                                     >
-                                        <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl overflow-hidden">
+                                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl overflow-hidden flex-shrink-0">
                                             {friendItem.friend.avatar ? (
                                                 <img src={friendItem.friend.avatar} alt={friendItem.friend.name} className="w-full h-full object-cover" />
                                             ) : (
@@ -380,7 +388,7 @@ const ProfilePage: React.FC = () => {
             />
 
             {/* Cover Photo Section */}
-            <motion.div className="relative h-[300px] md:h-[350px] w-full" variants={itemVariants}>
+            <motion.div className="relative h-[200px] sm:h-[250px] md:h-[350px] w-full" variants={itemVariants}>
                 <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-[#0d0d0d]">
                     {user.coverPhoto ? (
                         <img
@@ -395,22 +403,22 @@ const ProfilePage: React.FC = () => {
                 <button 
                     onClick={handleCoverClick}
                     disabled={isUploadingCover}
-                    className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors disabled:opacity-50"
+                    className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-black/50 hover:bg-black/70 text-white rounded-lg backdrop-blur-sm transition-colors disabled:opacity-50"
                 >
-                    <Camera size={18} />
-                    <span className="text-sm font-medium">
+                    <Camera size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span className="text-xs sm:text-sm font-medium hidden sm:inline">
                         {isUploadingCover ? 'Đang tải...' : 'Sửa ảnh bìa'}
                     </span>
                 </button>
             </motion.div>
 
             {/* Profile Info Section */}
-            <motion.div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10" variants={itemVariants}>
+            <motion.div className="max-w-4xl mx-auto px-3 sm:px-4 -mt-16 sm:-mt-20 relative z-10" variants={itemVariants}>
                 {/* Avatar and Basic Info */}
-                <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 mb-4 sm:mb-6">
                     {/* Avatar */}
-                    <div className="relative">
-                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#0d0d0d] bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white text-4xl font-bold overflow-hidden">
+                    <div className="relative mx-auto sm:mx-0">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-4 border-[#0d0d0d] bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold overflow-hidden">
                             {user.avatar ? (
                                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                             ) : (
@@ -420,30 +428,43 @@ const ProfilePage: React.FC = () => {
                         <button 
                             onClick={handleAvatarClick}
                             disabled={isUploadingAvatar}
-                            className="absolute bottom-2 right-2 w-9 h-9 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-white border-2 border-[#0d0d0d] transition-colors disabled:opacity-50"
+                            className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-7 h-7 sm:w-9 sm:h-9 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-white border-2 border-[#0d0d0d] transition-colors disabled:opacity-50"
                         >
-                            <Camera size={16} />
+                            <Camera size={14} className="sm:w-4 sm:h-4" />
                         </button>
                     </div>
 
                     {/* Name and Bio */}
-                    <div className="flex-1 md:mb-4">
-                        <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{user.name}</h1>
-                        <p className="text-purple-400">{user.bio}</p>
+                    <div className="flex-1 text-center sm:text-left md:mb-4">
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1">{user.name}</h1>
+                        <p className="text-purple-400 text-sm sm:text-base">{user.bio}</p>
                     </div>
 
-                    {/* Edit Profile Button */}
-                    <button 
-                        onClick={() => setIsEditModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors md:mb-4"
-                    >
-                        <Edit size={18} />
-                        <span>Chỉnh sửa trang cá nhân</span>
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 w-full sm:w-auto md:mb-4">
+                        {/* Edit Profile Button */}
+                        <button 
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm sm:text-base"
+                        >
+                            <Edit size={16} className="sm:w-[18px] sm:h-[18px]" />
+                            <span className="sm:hidden">Chỉnh sửa</span>
+                            <span className="hidden sm:inline">Chỉnh sửa trang cá nhân</span>
+                        </button>
+                        
+                        {/* Logout Button - Mobile only */}
+                        <button 
+                            onClick={handleLogout}
+                            className="md:hidden flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 rounded-lg font-medium transition-colors text-sm border border-red-600/30"
+                        >
+                            <LogOut size={16} />
+                            <span>Đăng xuất</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* User Info Row */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-400 mb-6 pb-6 border-b border-gray-800">
+                <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-800">
                     {user.workplace && (
                         <div className="flex items-center gap-2">
                             <Briefcase size={16} />

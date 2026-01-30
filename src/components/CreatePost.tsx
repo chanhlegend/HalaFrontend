@@ -161,27 +161,27 @@ const CreatePost: React.FC<CreatePostProps> = ({ user, onPostCreated }) => {
             />
 
             <div className="flex items-center justify-between border-t border-gray-800 pt-3">
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2">
                     <button 
                         onClick={handleImageButtonClick}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-green-400 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-green-400 transition-colors disabled:opacity-50"
                         disabled={isLoading || selectedImages.length >= 10}
                     >
                         <Image size={20} className="text-green-500" />
-                        <span className="text-sm font-medium">Ảnh</span>
+                        <span className="text-sm font-medium hidden sm:inline">Ảnh</span>
                         {selectedImages.length > 0 && (
                             <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">
                                 {selectedImages.length}
                             </span>
                         )}
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors opacity-50 cursor-not-allowed">
+                    <button className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors opacity-50 cursor-not-allowed">
                         <Video size={20} className="text-red-500" />
-                        <span className="text-sm font-medium">Video</span>
+                        <span className="text-sm font-medium hidden sm:inline">Video</span>
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-yellow-400 transition-colors opacity-50 cursor-not-allowed">
+                    <button className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-yellow-400 transition-colors opacity-50 cursor-not-allowed">
                         <Smile size={20} className="text-yellow-500" />
-                        <span className="text-sm font-medium">Cảm xúc</span>
+                        <span className="text-sm font-medium hidden sm:inline">Cảm xúc</span>
                     </button>
                 </div>
 
