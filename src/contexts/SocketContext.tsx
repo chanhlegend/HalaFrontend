@@ -163,7 +163,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         // Handle token refresh
         const handleTokenRefresh = (event: any) => {
             console.log('Token refreshed, reconnecting socket...');
-            const { accessToken } = event.detail;
             
             // Disconnect old socket
             if (socketRef.current) {
