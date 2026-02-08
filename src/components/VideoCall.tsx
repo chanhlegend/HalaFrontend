@@ -37,6 +37,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
     const localVideoRef = useRef<HTMLDivElement>(null);
     const remoteVideoRef = useRef<HTMLDivElement>(null);
 
+    // Play remote video AFTER React has rendered the remote video container
+    useEffect(() => {
+        if (remoteUsers.length > 0 && remoteVideoRef.current) {
+            const remoteUser = remoteUsers[remoteUsers.length - 1];
+            if (remoteUser.videoTrack) {
+                remoteUser.videoTrack.play(remoteVideoRef.current);
+            }
+        }
+    }, [remoteUsers]);
+
     useEffect(() => {
         const init = async () => {
             // Handle remote user events
@@ -48,11 +58,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
                         if (prev.find(u => u.uid === user.uid)) return prev;
                         return [...prev, user];
                     });
-                    
-                    // Play remote video
-                    if (remoteVideoRef.current) {
-                        user.videoTrack?.play(remoteVideoRef.current);
-                    }
+                    // Video will be played by the useEffect above after re-render
                 }
                 
                 if (mediaType === 'audio') {
