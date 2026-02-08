@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSocket, IncomingCallData } from '../contexts/SocketContext';
 import IncomingCall from './IncomingCall';
 import VideoCall from './VideoCall';
@@ -14,8 +14,19 @@ interface ActiveCallData {
     callerId?: string;
 }
 
+const CALL_STATE_KEY = 'hala_active_call';
+
+// Save call state to sessionStorage so we can notify on F5/close
+const saveCallState = (callData: ActiveCallData | null, isInCall: boolean, isCalling: boolean) => {
+    if (callData && (isInCall || isCalling)) {
+        sessionStorage.setItem(CALL_STATE_KEY, JSON.stringify({ callData, isInCall, isCalling }));
+    } else {
+        sessionStorage.removeItem(CALL_STATE_KEY);
+    }
+};
+
 const GlobalCallHandler: React.FC = () => {
-    const { incomingCall, setIncomingCall, callAccepted, setCallAccepted, callRejected, setCallRejected, callEnded, setCallEnded } = useSocket();
+    const { incomingCall, setIncomingCall, callAccepted, setCallAccepted, callRejected, setCallRejected, callEnded, setCallEnded, socket } = useSocket();
     const [isCalling, setIsCalling] = useState(false); // Đang gọi, đợi người nhận
     const [isInCall, setIsInCall] = useState(false); // Đang trong cuộc gọi video
     const [callData, setCallData] = useState<ActiveCallData | null>(null);
@@ -23,6 +34,56 @@ const GlobalCallHandler: React.FC = () => {
     // Get current user from localStorage
     const userStr = localStorage.getItem('user');
     const currentUser = userStr ? JSON.parse(userStr) : null;
+
+    // Persist call state to sessionStorage whenever it changes
+    useEffect(() => {
+        saveCallState(callData, isInCall, isCalling);
+    }, [callData, isInCall, isCalling]);
+
+    // On mount: check if there was an active call before F5 (notify the other party)
+    useEffect(() => {
+        const savedState = sessionStorage.getItem(CALL_STATE_KEY);
+        if (savedState) {
+            try {
+                const { callData: savedCallData } = JSON.parse(savedState);
+                // Page was refreshed during a call → notify the other party via API
+                if (savedCallData?.callerId) {
+                    endCallApi(savedCallData.callerId).catch(() => {});
+                }
+            } catch (e) {
+                // ignore parse errors
+            }
+            sessionStorage.removeItem(CALL_STATE_KEY);
+        }
+    }, []);
+
+    // Notify the other party when user closes/refreshes the page
+    const handleBeforeUnload = useCallback(() => {
+        if ((isInCall || isCalling) && callData?.callerId) {
+            // Use socket event for instant notification (sendBeacon is unreliable for WebSocket)
+            if (socket) {
+                socket.emit('call_ended_by_user', { otherId: callData.callerId });
+            }
+            // Also try to send via fetch as backup (sendBeacon for REST API)
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                const body = JSON.stringify({ otherId: callData.callerId });
+                // Use sendBeacon which works during page unload
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([body], { type: 'application/json' });
+                    navigator.sendBeacon(`${apiUrl}/api/calls/end?token=${token}`, blob);
+                }
+            }
+        }
+    }, [isInCall, isCalling, callData, socket]);
+
+    useEffect(() => {
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [handleBeforeUnload]);
 
     // Handle when call is ended by the other user - exit VideoCall
     useEffect(() => {

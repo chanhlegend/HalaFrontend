@@ -30,7 +30,7 @@ export interface IncomingCallData {
 }
 
 export interface CallAcceptedData {
-    oderId: string;
+    userId: string;
     userName: string;
     userAvatar?: string;
     channelName: string;
@@ -131,6 +131,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 auth: {
                     token,
                 },
+                reconnection: true,
+                reconnectionAttempts: 10,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
             });
 
             socketRef.current = newSocket;
@@ -141,9 +145,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 setIsConnected(true);
             });
 
-            newSocket.on('disconnect', () => {
-                console.log('❌ Socket disconnected');
+            newSocket.on('disconnect', (reason) => {
+                console.log('❌ Socket disconnected, reason:', reason);
                 setIsConnected(false);
+                // If server disconnected us (not a client-initiated disconnect),
+                // it means the connection was lost unexpectedly
+                if (reason === 'io server disconnect' || reason === 'transport close' || reason === 'transport error') {
+                    console.log('⚠️ Unexpected disconnect - active calls may be affected');
+                }
             });
 
             newSocket.on('connect_error', (error) => {
