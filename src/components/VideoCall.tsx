@@ -119,7 +119,16 @@ const VideoCall: React.FC<VideoCallProps> = ({
 
         init();
 
+        // Handle page refresh/close - cleanup Agora resources immediately
+        const handleBeforeUnload = () => {
+            localVideoTrack?.close();
+            localAudioTrack?.close();
+            client.leave().catch(() => {});
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
         return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
             // Cleanup
             localVideoTrack?.close();
             localAudioTrack?.close();
